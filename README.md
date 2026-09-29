@@ -46,7 +46,12 @@ npm run smoke    # browser test of the customer and staff journeys, phone and da
 Demo data covers a 28-car fleet in 5 classes at 2 locations: 120 days of history and 30 days of forward bookings, around 60% utilisation. The generator guarantees no car is ever double-booked (checked in the tests). **Prices & settings → Reset demo** regenerates it around today's date.
 
 ## Deploy
-Settings → Pages → Source: **GitHub Actions**. Pushes to `main` then test, build and publish it.
+This repo is private, and GitHub Pages for private repos needs a paid GitHub plan, so the Pages workflow runs **only when started by hand**. To publish:
+1. Make the repo public (or upgrade your plan).
+2. Settings → Pages → Source: **GitHub Actions**.
+3. Actions → **Deploy…** → Run workflow.
+
+Or deploy anywhere static for free (Netlify, Vercel, Cloudflare Pages): build it and upload the output folder.
 
 ## Before taking real bookings
 This is a demo build: data is stored in one browser, and there are no staff logins or online payments. For production, add:
