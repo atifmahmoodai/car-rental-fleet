@@ -34,7 +34,7 @@ export function BookingDetail() {
   const cls = data.classes.find((c) => c.id === b.classId);
   const extras = data.extras.filter((e) => b.extras.includes(e.id));
   const otherCents = Math.round(Number(other) * 100);
-  const preview = b.status === "Active" ? settleReturn(b, { at: new Date(now).toISOString(), fuel, otherChargesCents: Number.isFinite(otherCents) ? otherCents : 0 }, data.settings) : null;
+  const preview = b.status === "Active" ? settleReturn(b, { at: new Date(now).toISOString(), fuel, otherChargesCents: Number.isFinite(otherCents) ? otherCents : 0 }, data.settings, data.extras) : null;
   const swapOptions =
     b.status === "Reserved"
       ? data.cars.filter(

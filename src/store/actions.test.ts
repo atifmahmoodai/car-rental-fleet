@@ -56,8 +56,26 @@ describe("booking actions", () => {
     expect(done.status).toBe("Returned");
     expect(done.checkin!.lateDays).toBe(1);
     expect(done.checkin!.fuelChargeCents).toBe(900);
-    expect(done.checkin!.finalTotalCents).toBe(b.quote.totalCents + Math.round((3900 + 900) * 1.1));
+    // Late day = daily rate + the GPS it kept (600/day) + fuel.
+    expect(done.checkin!.finalTotalCents).toBe(b.quote.totalCents + Math.round((3900 + 600 + 900) * 1.1));
     expect(back.value.cars.find((c) => c.id === b.carId)!.odometer).toBe(odo + 300);
+  });
+
+  it("won't hand over a car that the previous renter hasn't returned", () => {
+    let d = generateDemoData(now);
+    const first = actions.create(d, { classId: "k-eco", pickupAt: "2026-09-28T13:00:00.000Z", returnAt: "2026-09-28T15:00:00.000Z", pickupLocationId: "l-city", returnLocationId: "l-city", extras: [], driver, source: "Counter" }, T);
+    if (!first.ok) throw new Error(first.error);
+    d = first.value.data;
+    const carId = first.value.booking.carId;
+    const odo = d.cars.find((c) => c.id === carId)!.odometer;
+    const out = actions.checkout(d, first.value.booking.id, { odometer: odo, fuel: 8 }, T);
+    if (!out.ok) throw new Error(out.error);
+    // Simulate a second booking that was put on the same car for later that day.
+    const second = { ...first.value.booking, id: "b-second", ref: "RC-SECOND", status: "Reserved" as const, pickupAt: "2026-09-28T19:00:00.000Z", returnAt: "2026-09-29T19:00:00.000Z", checkout: undefined };
+    d = { ...out.value, bookings: [...out.value.bookings, second] };
+    const res = actions.checkout(d, "b-second", { odometer: odo, fuel: 8 }, Date.parse("2026-09-28T19:00:00Z"));
+    expect(res.ok).toBe(false);
+    expect(!res.ok && res.error).toMatch(/still out on booking/);
   });
 
   it("charges a day for late cancellation only", () => {

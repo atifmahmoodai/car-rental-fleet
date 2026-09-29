@@ -165,16 +165,25 @@ export function validateDriver(d: Driver, pickupAt: string, s: Settings): Bookin
   return e;
 }
 
-/** Final charges at return: late days, fuel and other charges on top of the quote. */
+/**
+ * Final charges at return: late days, fuel and other charges on top of the quote.
+ * Late days also carry the booked per-day extras (up to their caps) and the young-driver fee.
+ */
 export function settleReturn(
   b: Booking,
   ret: { at: string; fuel: number; otherChargesCents: number },
   s: Settings,
+  extras: Extra[] = [],
 ): { lateDays: number; lateCents: number; fuelChargeCents: number; finalTotalCents: number } {
   const chargedDays = rentalDays(b.checkout?.at ?? b.pickupAt, ret.at, s.graceMinutes);
   const lateDays = Math.max(0, chargedDays - b.quote.days);
   const dailyAfterDiscount = Math.round(b.quote.dailyRateCents * (1 - b.quote.discountPercent / 100));
-  const lateCents = lateDays * dailyAfterDiscount;
+  const booked = b.quote.days;
+  const lateExtrasCents = extras
+    .filter((e) => b.extras.includes(e.id))
+    .reduce((sum, e) => sum + Math.min(e.perDayCents * (booked + lateDays), e.maxCents ?? Infinity) - Math.min(e.perDayCents * booked, e.maxCents ?? Infinity), 0);
+  const lateYoungCents = booked > 0 ? Math.round((b.quote.youngDriverCents / booked) * lateDays) : 0;
+  const lateCents = lateDays * dailyAfterDiscount + lateExtrasCents + lateYoungCents;
   const fuelOut = b.checkout?.fuel ?? 8;
   const fuelChargeCents = Math.max(0, fuelOut - ret.fuel) * s.fuelChargePerEighthCents;
   const extraNet = lateCents + fuelChargeCents + Math.max(0, ret.otherChargesCents);

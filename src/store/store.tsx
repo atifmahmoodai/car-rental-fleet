@@ -95,6 +95,9 @@ export const actions = {
     if (!(h.odometer >= (car?.odometer ?? 0))) return { ok: false, error: `Odometer can't be below the last reading (${car?.odometer}).` };
     if (!(h.fuel >= 0 && h.fuel <= 8)) return { ok: false, error: "Fuel must be 0–8 eighths." };
     if (Date.parse(b.pickupAt) - now > 12 * 3_600_000) return { ok: false, error: "Too early: pick-up is more than 12 hours away." };
+    // The previous renter may be overdue with this very car.
+    const stillOut = d.bookings.find((x) => x.carId === b.carId && x.status === "Active" && x.id !== b.id);
+    if (stillOut) return { ok: false, error: `${car?.plate ?? "This car"} is still out on booking ${stillOut.ref}. Move this booking to another car first.` };
     const next = patch(d, id, { status: "Active", checkout: { at: new Date(now).toISOString(), odometer: h.odometer, fuel: h.fuel } });
     return { ok: true, value: { ...next, cars: next.cars.map((c) => (c.id === b.carId ? { ...c, odometer: h.odometer } : c)) } };
   },
@@ -105,7 +108,7 @@ export const actions = {
     if (!(r.fuel >= 0 && r.fuel <= 8)) return { ok: false, error: "Fuel must be 0–8 eighths." };
     if (!(r.otherChargesCents >= 0)) return { ok: false, error: "Other charges can't be negative." };
     const at = new Date(now).toISOString();
-    const s = settleReturn(b, { at, fuel: r.fuel, otherChargesCents: r.otherChargesCents }, d.settings);
+    const s = settleReturn(b, { at, fuel: r.fuel, otherChargesCents: r.otherChargesCents }, d.settings, d.extras);
     const next = patch(d, id, {
       status: "Returned",
       checkin: { at, odometer: r.odometer, fuel: r.fuel, damage: r.damage.trim(), lateDays: s.lateDays, fuelChargeCents: s.fuelChargeCents, otherChargesCents: r.otherChargesCents, finalTotalCents: s.finalTotalCents },
