@@ -2,6 +2,8 @@
 
 A rental company's customer booking site and back office in one app. It answers the questions a rental business pays developers for: can this car be booked, what should it cost, where is every car, and how hard is the fleet working?
 
+**Project guide (PDF):** [docs/PROJECT-GUIDE.pdf](docs/PROJECT-GUIDE.pdf) explains what this project is, the business problem it solves, the client's requirements, and how to build it from scratch, step by step.
+
 ![Search results](docs/screenshots/search.png)
 
 | Fleet calendar | Dashboard | Phone |
